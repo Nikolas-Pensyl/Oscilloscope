@@ -3,8 +3,7 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
-#include "../Inc/cpp_main.h"
-#include "cpp_main.h"
+
 
 #include "KnobFSM.h"
 #include "Sample_clock.h"
@@ -96,7 +95,7 @@ void do_cpp_loop()
 	// **
 	// INITIALIZATION -- GPIO port pointer and GPIO pin IDs for the quadrature
 	// logic signals, and a pointer to the queue for output.
-	Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
+	//Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
 
 	// THE COUNTER -- each CW detent of the knob counts +1, each CCW, -1
 	// Needs a queue for input - if the queue is empty, then instead of AWAITing,
@@ -111,9 +110,6 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
-	Display_config seven_seg_wiring = {GPIOC, {UserPC0_Pin, UserPC1_Pin, UserPC2_Pin, UserPC3_Pin, \
-			UserPC4_Pin, UserPC5_Pin, UserPC6_Pin}};
-	Display display(&user_count, &seven_seg_wiring);
 
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
@@ -125,7 +121,7 @@ void do_cpp_loop()
 		// Often calling this accomplishes nothing, but at the chosen
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
-		knob1.update();
+		//knob1.update();
 
 		// Third - run the counter. This awaits the knob's sampled
 		// and decoded input. This call often does nothing - since
@@ -150,6 +146,6 @@ void do_cpp_loop()
 		// illustrate a SYNCHRONOUS transfer, and this is such a demo: the display
 		// demands an immediate reply from the counter using the normal C flow-
 		// of-control via a function call.
-		display.update();
+		//display.update();
 	}
 }
