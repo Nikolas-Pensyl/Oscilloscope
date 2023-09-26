@@ -56,6 +56,30 @@ void Display::seven_segmentize(uint8_t n){
 	}
 }
 
+void Display::init(){
+	//Set Scroll line to 0 :: 0100_0000
+
+	//Set SEG direction to reverse :: 1010_0001
+
+	//Set COM direction to normal :: 1100_0000
+
+	//Set all pixels to ON :: 1010_0010
+
+	//Set inverse display to OFF :: 1010_0110
+
+	//Set LCD Bias Ratio to 1/9 :: 1010_0010
+
+	//Set Power Settings to all ON :: 0010_1111
+
+	//Set VLCD Resistor Ratio(For contrast) :: 0010_0111
+
+	//Set Electronic Volume(Two-part command, for contrast) :: 1000_0001, 0001_0000
+
+	//Set Temperature Compensation(Two-part command) :: 1111_1010, 1001_0000
+
+	//Set Display Enable to ON :: 1010_1111
+
+}
 
 void Display::update(){
 	// Get a small integer from the source
