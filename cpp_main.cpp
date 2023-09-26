@@ -3,8 +3,7 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
-
-
+#include "../Inc/cpp_main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "Singledigitcounter.h"
@@ -35,11 +34,18 @@ Sean_queue q_user_command;
 /*** and then you must define void TIM17_IRQHandler (void) as declared in   ***/
 /*** the auto-generated file stm32g0xx_it.c -- trickier, and quicker!       ***/
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim17){
-	bool cross_fingers = q_ms.enqueue(1);
-	assert(cross_fingers);   // ERROR TRAP - queue overflow!
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	//bool cross_fingers = q_ms.enqueue(1);
+	//assert(cross_fingers);   // ERROR TRAP - queue overflow!
+
+	if(htim->Instance == TIM17) {
+
+	}
 }
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+	q_ms.enqueue(HAL_ADC_GetValue(hadc));
+}
 
 /********************* Keep everything in C++-language from this pt. ***/
 void do_cpp_loop()
@@ -110,7 +116,6 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
-
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
@@ -131,6 +136,9 @@ void do_cpp_loop()
 		// command, then we increase or decrease the count.
 
 		user_count.update();
+		if(q_ms.getUseCount()>0) {
+			user_count.update();
+		}
 
 		////////////////////////////////////////////////////////////////////
 		// DONE: Let the counter work by OMITTING THIS SECTION
