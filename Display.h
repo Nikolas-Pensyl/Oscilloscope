@@ -38,6 +38,7 @@ public:
 	virtual ~Display();
 	Display(const Display &other);
 
+	void init();
 	void update(void);
 };
 
