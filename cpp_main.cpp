@@ -3,13 +3,13 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
-#include "../Inc/cpp_main.h"
+//#include "../Inc/cpp.main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "Singledigitcounter.h"
 #include "Display.h"
 #include "Sean_queue.h"
-
+#include "Adc_to_Vert.h"
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -18,7 +18,8 @@
 Sean_queue q_ms;
 Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
-
+Sean_queue adc_raw_queue;
+Sean_queue pixel_vertical_queue;
 /*****************************************************************************/
 
 /* USER CODE BEGIN 0 */
@@ -116,7 +117,6 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
-	int16_t transport_data = 0;
 
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
@@ -129,9 +129,12 @@ void do_cpp_loop()
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
 		//knob1.update();
-		if(ms_queue.dequeue(&transport_data)) {
-			q_get_data_asap.enqueue(transport_data);
-		}
+
+
+		raw_To_Vert_Queue(&adc_raw_queue, &pixel_vertical_queue);
+
+
+		//if(adc_raw_queue.dequeue()
 		// Third - run the counter. This awaits the knob's sampled
 		// and decoded input. This call often does nothing - since
 		// the user rarely turns the knob, it REALLY rarely does
@@ -139,10 +142,11 @@ void do_cpp_loop()
 		// choose to issue any orders. If there is a CW or CCW
 		// command, then we increase or decrease the count.
 
+		/*
 		user_count.update();
 		if(q_ms.getUseCount()>0) {
 			user_count.update();
-		}
+		}*/
 
 		////////////////////////////////////////////////////////////////////
 		// DONE: Let the counter work by OMITTING THIS SECTION
