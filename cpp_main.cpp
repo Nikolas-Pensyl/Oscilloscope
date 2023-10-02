@@ -18,6 +18,7 @@
 Sean_queue q_ms;
 Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
+Sean_queue adc_raw_queue;
 
 /*****************************************************************************/
 
@@ -44,7 +45,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-	q_ms.enqueue(HAL_ADC_GetValue(hadc));
+	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -129,7 +130,7 @@ void do_cpp_loop()
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
 		//knob1.update();
-		if(ms_queue.dequeue(&transport_data)) {
+		if(q_ms.dequeue(&transport_data)) {
 			q_get_data_asap.enqueue(transport_data);
 		}
 		// Third - run the counter. This awaits the knob's sampled
