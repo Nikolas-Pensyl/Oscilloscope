@@ -3,7 +3,6 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
-#include "../Inc/cpp_main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "Singledigitcounter.h"
@@ -18,6 +17,10 @@
 Sean_queue q_ms;
 Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
+
+Display DOG;
+
+extern SPI_HandleTypeDef hspi1;
 
 /*****************************************************************************/
 
@@ -116,7 +119,8 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
-	int16_t transport_data = 0;
+	DOG.init(hspi1);
+
 
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
@@ -129,9 +133,7 @@ void do_cpp_loop()
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
 		//knob1.update();
-		if(ms_queue.dequeue(&transport_data)) {
-			q_get_data_asap.enqueue(transport_data);
-		}
+
 		// Third - run the counter. This awaits the knob's sampled
 		// and decoded input. This call often does nothing - since
 		// the user rarely turns the knob, it REALLY rarely does

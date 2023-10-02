@@ -10,9 +10,10 @@
 // This default constructor shouldn't be used! Assigning source ptr = 0
 // (without memory protection) is very dangerous. The
 Display::Display() {
-	pins.port = GPIOB;
-	bitwise = 0;
-    source = new Single_digit_counter;  // EVIL D- so trap
+//	pins.port = GPIOB;
+//	bitwise = 0;
+//    source = new Single_digit_counter;  // EVIL D- so trap
+	//port = GPIOA;
     assert(false);  // Set a breakpoint here to see if this is used.
 }
 
@@ -21,81 +22,80 @@ Display::~Display() {
 }
 
 Display::Display(const Display &other) {
-	this-> pins = other.pins;
-	this->bitwise = other.bitwise;
-	this->source = other.source;
+	//this->port = other.port;
 }
 
-Display::Display(const Single_digit_counter *source, const Display_config  *config){
-	// MEMORIZE WIRING
-	pins.port = config->port;
-	for (int i = 0; i < 7; i++){
-		pins.segment_mask[i] = config->segment_mask[i];
-	}
-	//  bit pattern: 7-segment as a byte = 0abcdefg
-	bitwise = 0x01;  // NULL is a dash.
-
-	// Data from counter:
-	this->source = source;
+Display::Display(GPIO_TypeDef port1){
+	//port = port1;
 }
 
 
-void Display::seven_segmentize(uint8_t n){
-	//  bit pattern: 7-segment as a byte = 0abcdefg
-	switch (n){
-	case 0: bitwise = 0x7E; break; //_111 1110
-	case 1: bitwise = 0x30; break; //_011 0000
-	case 2: bitwise = 0x6D; break; //_110 1101
-	case 3: bitwise = 0x79; break; //_111 1001
-	case 4: bitwise = 0x33; break; //_011 0011
-	case 5: bitwise = 0x5B; break; //_101 1011
-	case 6: bitwise = 0x5F; break; //_101 1111
-	case 7: bitwise = 0x70; break; //_111 0000
-	case 8: bitwise = 0x7F; break;
-	case 9: bitwise = 0x73; break; //_111 0011
-	}
-}
+void Display::init(SPI_HandleTypeDef hspi1){
 
-void Display::init(){
+	//Drive CD Pin Low to feed commands
+	HAL_GPIO_WritePin(GPIOA, 0x0008, GPIO_PIN_RESET);
+
 	//Set Scroll line to 0 :: 0100_0000
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x40, 2, HAL_MAX_DELAY);
 
 	//Set SEG direction to reverse :: 1010_0001
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xA1, 2, HAL_MAX_DELAY);
 
 	//Set COM direction to normal :: 1100_0000
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xC0, 2, HAL_MAX_DELAY);
 
 	//Set all pixels to ON :: 1010_0010
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xA4, 2, HAL_MAX_DELAY);
 
 	//Set inverse display to OFF :: 1010_0110
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xA6, 2, HAL_MAX_DELAY);
 
 	//Set LCD Bias Ratio to 1/9 :: 1010_0010
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xA2, 2, HAL_MAX_DELAY);
 
 	//Set Power Settings to all ON :: 0010_1111
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x2F, 2, HAL_MAX_DELAY);
 
 	//Set VLCD Resistor Ratio(For contrast) :: 0010_0111
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x27, 2, HAL_MAX_DELAY);
 
 	//Set Electronic Volume(Two-part command, for contrast) :: 1000_0001, 0001_0000
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x81, 2, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x10, 2, HAL_MAX_DELAY);
 
 	//Set Temperature Compensation(Two-part command) :: 1111_1010, 1001_0000
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xFA, 2, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x90, 2, HAL_MAX_DELAY);
 
 	//Set Display Enable to ON :: 1010_1111
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xAF, 2, HAL_MAX_DELAY);
 
+	//Set Scroll line to 0
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0x40, 2, HAL_MAX_DELAY);
+
+	//Set page to 0
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xB0, 2, HAL_MAX_DELAY);
+
+
+	//Set CD Line high to indicate data
+	HAL_GPIO_WritePin(GPIOA, 0x0008, GPIO_PIN_SET);
 }
 
 void Display::update(){
 	// Get a small integer from the source
-	uint8_t n = source->count();
-	// Encode it into a seven-segment pattern, packed bitwise into a byte
-	seven_segmentize(n);
-
-	// Examine each bit of the bitwise encoding
-	// Assert the seven-segment display to match
-	for (int n = 0; n < 7; n++){
-		uint8_t mask = 1 << (6-n);
-		if (mask & bitwise){
-			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_SET);
-		}
-		else {
-			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_RESET);
-		}
-	}
+//	uint8_t n = source->count();
+//	// Encode it into a seven-segment pattern, packed bitwise into a byte
+//	seven_segmentize(n);
+//
+//	// Examine each bit of the bitwise encoding
+//	// Assert the seven-segment display to match
+//	for (int n = 0; n < 7; n++){
+//		uint8_t mask = 1 << (6-n);
+//		if (mask & bitwise){
+//			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_SET);
+//		}
+//		else {
+//			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_RESET);
+//		}
+//	}
 }

@@ -28,17 +28,14 @@ typedef struct {
 
 class Display {
 private:
-	Display_config pins;
-	uint8_t bitwise;
-	const Single_digit_counter* source;
-	void seven_segmentize(uint8_t n);
+	//const GPIO_TypeDef port;
 public:
-	Display();
-	Display(const Single_digit_counter* source, const Display_config* config);
+	Display(); //TODO:: REDO THIS CONSTRUCTOR
+	Display(GPIO_TypeDef port);
 	virtual ~Display();
 	Display(const Display &other);
 
-	void init();
+	void init(SPI_HandleTypeDef hspi);
 	void update(void);
 };
 
