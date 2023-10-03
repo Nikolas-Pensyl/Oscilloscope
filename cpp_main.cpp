@@ -45,7 +45,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-	q_ms.enqueue(HAL_ADC_GetValue(hadc));
+	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -129,12 +129,7 @@ void do_cpp_loop()
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
 		//knob1.update();
-
-
 		raw_To_Vert_Queue(&adc_raw_queue, &pixel_vertical_queue);
-
-
-		//if(adc_raw_queue.dequeue()
 		// Third - run the counter. This awaits the knob's sampled
 		// and decoded input. This call often does nothing - since
 		// the user rarely turns the knob, it REALLY rarely does

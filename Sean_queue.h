@@ -26,6 +26,7 @@ public:
 	bool enqueue(int16_t msg);
 	bool dequeue(int16_t* msg);
 	S_queue_status_codes status();
+	int16_t getUseCount();
 };
 
 #endif /* INC_SEANQUEUE_H_ */

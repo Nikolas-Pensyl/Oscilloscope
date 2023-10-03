@@ -36,6 +36,10 @@ Sean_queue::Sean_queue(const Sean_queue &other) {
 	}
 }
 
+int16_t Sean_queue::getUseCount() {
+	return this->use_count;
+}
+
 bool Sean_queue::enqueue(const int16_t msg){
 	// Head + Use_count style, and calculates tail - circular buffer.
 	// enqueue() returns FALSE if buffer is full.
