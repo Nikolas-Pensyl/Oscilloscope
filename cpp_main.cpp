@@ -18,10 +18,6 @@ Sean_queue q_ms;
 Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
 
-Display DOG;
-
-extern SPI_HandleTypeDef hspi1;
-
 /*****************************************************************************/
 
 /* USER CODE BEGIN 0 */
@@ -119,7 +115,6 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
-	DOG.init(hspi1);
 
 
 	while(1){
@@ -127,6 +122,7 @@ void do_cpp_loop()
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
 		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
 		tick_filter.update();
+		//DOG.init(hspi1);
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
 		// Often calling this accomplishes nothing, but at the chosen

@@ -14,7 +14,7 @@ Display::Display() {
 //	bitwise = 0;
 //    source = new Single_digit_counter;  // EVIL D- so trap
 	//port = GPIOA;
-    assert(false);  // Set a breakpoint here to see if this is used.
+    //assert(false);  // Set a breakpoint here to see if this is used.
 }
 
 Display::~Display() {
