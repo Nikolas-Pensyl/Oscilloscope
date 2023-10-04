@@ -120,6 +120,7 @@ void do_cpp_loop()
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
 	Display DOG;
+	DOG.init(hspi1);
 
 
 	while(1){
@@ -127,7 +128,6 @@ void do_cpp_loop()
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
 		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
 		tick_filter.update();
-		DOG.init(hspi1);
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
 		// Often calling this accomplishes nothing, but at the chosen
