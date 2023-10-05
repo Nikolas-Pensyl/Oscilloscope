@@ -36,6 +36,7 @@ public:
 	Display(const Display &other);
 
 	void init(SPI_HandleTypeDef hspi);
+	void clearScreen();
 	void update(void);
 };
 

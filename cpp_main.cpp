@@ -3,6 +3,7 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
+#include "../Inc/cpp_main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "Singledigitcounter.h"
@@ -121,13 +122,17 @@ void do_cpp_loop()
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
 	Display DOG;
 
+	DOG.init(hspi1);
+	DOG.clearScreen(hspi1);
+
 
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
 		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
 		tick_filter.update();
-		DOG.init(hspi1);
+
+
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
 		// Often calling this accomplishes nothing, but at the chosen
