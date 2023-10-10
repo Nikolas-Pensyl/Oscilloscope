@@ -1,0 +1,27 @@
+Project - DOGS102-6 GRAPHIC to STM32G071 Nucleo board 
+
+Required hardware
+================
+   Platform = STM32G071 Nucleo board and DOGS102-6 GRAPHIC 
+   
+   
+ 
+Wiring:
+	22 and 23 and 27 to 3.3v
+	20 and 21 to GND
+	16 to Capacitor to 19
+	17 to Capacitor to 18
+	(Named Pins to display)
+	PA1 to 25 (clk)
+	PA4 to 28 (Chip Select)
+	PA5 to 26 (CD)
+	PA12 to MOSI
+			
+		
+Things to check:
+	1) Check the GND is actually connected
+	2) Check power is still connected to board and display
+	3) Check capacitors are still connected properly (16 to 19 and 17 to 18)
+	4) Check your CD line is properly connected
+	5) Check the selection lines connection
+	

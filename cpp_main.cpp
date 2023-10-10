@@ -23,6 +23,7 @@ extern SPI_HandleTypeDef hspi1;
 
 Sean_queue adc_raw_queue;
 Sean_queue pixel_vertical_queue;
+
 /*****************************************************************************/
 
 /* USER CODE BEGIN 0 */
@@ -64,7 +65,6 @@ void do_cpp_loop()
 	// q_data_collect -- which will be served by the object (knob_FSM).
 	// INITIALIZATION - queues for in & out + down-sampling divisor.
 	Sample_clock tick_filter(&q_ms, &q_get_data_asap, 1);
-
 	// THE QUADRATURE-ENCODED KNOB - knob moving CW or CCW, or still.
 	// Needs to know the input pins.
 	// Needs an input queue to hold a sampling command, to be served ASAP.
