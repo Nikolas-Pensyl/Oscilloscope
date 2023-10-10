@@ -10,6 +10,7 @@
 #include "Display.h"
 #include "Sean_queue.h"
 #include "Adc_to_Vert.h"
+#include "RamHealth.h"
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -117,7 +118,17 @@ void do_cpp_loop()
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
 
+	init_mem_barrier();
+
 	while(1){
+
+		//For Release
+		//if(!getRamHealth()) { reboot(); }
+
+
+		//For Debugging purposes
+		if(!getRamHealth()) { while(1) {} }
+
 		// First, run the sample-clock task. It may have no work, but if
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
 		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
