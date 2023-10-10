@@ -23,6 +23,7 @@ extern SPI_HandleTypeDef hspi1;
 
 Sean_queue adc_raw_queue;
 Sean_queue pixel_vertical_queue;
+
 /*****************************************************************************/
 
 /* USER CODE BEGIN 0 */
@@ -37,18 +38,17 @@ Sean_queue pixel_vertical_queue;
 /*** CubeMX tab = Project Manager ... choose TIM17 = LL instead of HAL),    ***/
 /*** and then you must define void TIM17_IRQHandler (void) as declared in   ***/
 /*** the auto-generated file stm32g0xx_it.c -- trickier, and quicker!       ***/
+extern ADC_HandleTypeDef hadc1;
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	//bool cross_fingers = q_ms.enqueue(1);
-	//assert(cross_fingers);   // ERROR TRAP - queue overflow!
-
-	if(htim->Instance == TIM17) {
-
-	}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+		if(htim->Instance == TIM16) {
+			HAL_ADC_Start_IT(&hadc1);
+		}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
+	HAL_ADC_Stop(&hadc1);
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -65,7 +65,6 @@ void do_cpp_loop()
 	// q_data_collect -- which will be served by the object (knob_FSM).
 	// INITIALIZATION - queues for in & out + down-sampling divisor.
 	Sample_clock tick_filter(&q_ms, &q_get_data_asap, 1);
-
 	// THE QUADRATURE-ENCODED KNOB - knob moving CW or CCW, or still.
 	// Needs to know the input pins.
 	// Needs an input queue to hold a sampling command, to be served ASAP.
@@ -119,6 +118,7 @@ void do_cpp_loop()
 	DOG.init(hspi1);
 	DOG.clearScreen(hspi1);
 	DOG.drawDiag(hspi1);
+
 
 	while(1){
 		// First, run the sample-clock task. It may have no work, but if
