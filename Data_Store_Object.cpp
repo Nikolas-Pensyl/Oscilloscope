@@ -5,25 +5,86 @@
  *      Author: simon
  */
 
-class DataStoreObject {
-	private:
-		// Buffer arrays with 100 16-bit signed integers each
-	    int16_t buffer1[100];
-	    int16_t buffer2[100];
 
-	    // Trigger level attribute
-	    int16_t trigger_level;
-
-	    // Readable and writable buffer pointers
-	    int16_t* readable_buffer;
-	    int16_t* writable_buffer;
+class DataStoreObject{
 
 
+	DataStoreObject(){
+	   	trigger_level = 0;
+	   	readable_buffer = buffer1;
+	   	writable_buffer = buffer2;
+	   	readable = false;
+	   	store_state = CHECK_1;
+	}
 
-	public:
-		DataStore() {
+    void setTriggerLevel(int16_t level) {
+        trigger_level = level;
+    }
 
-		}
+    void updateDataStore(int16_t value){
+    	static int16_t index = 0;
+    	switch(store_state){
+
+    	case CHECK_1:
+    		if(value < trigger_level){
+    			*writeable_buffer[index] = value;
+    			store_state = CHECK_2;
+    			index = 1;
+    		}
+    		break;
+    	case CHECK_2:
+    		if(value < trigger_level){
+    			*writeable_buffer[index] = value;
+    			store_state = CHECK_3;
+    			index = 2;
+    		}
+    		break;
+    	case CHECK_3:
+    		if(value > trigger_level){
+    			*writeable_buffer[index] = value;
+    			store_state = CHECK_3;
+    			index = 3;
+    		}
+    		break;
+    	case CHECK_4:
+    	    if(value > trigger_level){
+    	    	*writeable_buffer[index] = value;
+    	    	store_state = RECORDING;
+    	    	index = 4;
+    	    }
+    	    break;
+    	case RECORDING:
+
+    		*writeable_buffer[index] = value;
+    		index++;
+    		if(index == 100){
+    			index=0;
+    			store_state = CHECK_1;
+    			bufferSwap();
+    		}
+
+    	}
+
+
+    }
+
+    void bufferSwap(){
+    	if(writeable_buffer == buffer1){
+    		writeable_buffer = buffer2;
+    		readable_buffer = buffer1;
+    	}
+    	else{
+    		writeable_buffer = buffer1;
+    		readable_buffer = buffer2;
+    	}
+    }
+
+    int16_t* getReadBuffer(){
+    	 return readable_buffer;
+    }
+
+
+
 
 };
 
