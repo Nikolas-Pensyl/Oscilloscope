@@ -92,6 +92,8 @@ void Display::drawDiag(SPI_HandleTypeDef hspi) {
 		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_SET);
 
 		HAL_SPI_Transmit(&hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
+		if (i % 2 == 0)
+			 HAL_SPI_Transmit(&hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
 
 		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
 	}
