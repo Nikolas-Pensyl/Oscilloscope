@@ -32,10 +32,11 @@ class DataStoreObject {
 
 
 	public:
-
+	    DataStoreObject();
 	    void updateDataStore(int16_t value);
 	    void setTriggerLevel(int16_t level);
 	    void bufferSwap();
+	    int16_t* getReadBuffer();
 	    enum storeState{CHECK_1,CHECK_2,CHECK_3,CHECK_4,RECORDING};
 	    enum storeState store_state;
 

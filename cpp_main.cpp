@@ -3,7 +3,7 @@
 
 /***************** From scratch by Sean ****************************************/
 #include "main.h"
-//#include "../Inc/cpp_main.h"
+#include "../Inc/cpp_main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "Singledigitcounter.h"
