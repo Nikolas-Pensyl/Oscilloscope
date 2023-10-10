@@ -121,9 +121,9 @@ void do_cpp_loop()
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
 	Display DOG;
-
 	DOG.init(hspi1);
 	DOG.clearScreen(hspi1);
+	DOG.drawDiag(hspi1);
 
 
 	while(1){
