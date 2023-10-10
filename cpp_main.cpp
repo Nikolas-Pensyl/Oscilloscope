@@ -37,18 +37,17 @@ Sean_queue pixel_vertical_queue;
 /*** CubeMX tab = Project Manager ... choose TIM17 = LL instead of HAL),    ***/
 /*** and then you must define void TIM17_IRQHandler (void) as declared in   ***/
 /*** the auto-generated file stm32g0xx_it.c -- trickier, and quicker!       ***/
+extern ADC_HandleTypeDef hadc1;
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	//bool cross_fingers = q_ms.enqueue(1);
-	//assert(cross_fingers);   // ERROR TRAP - queue overflow!
-
-	if(htim->Instance == TIM17) {
-
-	}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+		if(htim->Instance == TIM16) {
+			HAL_ADC_Start_IT(&hadc1);
+		}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
+	HAL_ADC_Stop(&hadc1);
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
