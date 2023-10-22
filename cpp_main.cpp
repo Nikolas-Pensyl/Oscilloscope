@@ -6,11 +6,12 @@
 #include "../Inc/cpp_main.h"
 #include "KnobFSM.h"
 #include "Sample_clock.h"
-#include "Singledigitcounter.h"
+#include "DoubleDigitCounter.h"
 #include "Display.h"
 #include "Sean_queue.h"
 #include "Adc_to_Vert.h"
 #include "RamHealth.h"
+#include "Data_Store_Object.h"
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -24,6 +25,18 @@ extern SPI_HandleTypeDef hspi1;
 
 Sean_queue adc_raw_queue;
 Sean_queue pixel_vertical_queue;
+
+Sean_queue adc_speed_queue_in;
+Sean_queue adc_threshhold_queue_in;
+
+Sean_queue adc_speed_queue_out;
+Sean_queue adc_threshhold_queue_out;
+
+DataStoreObject adc_data;
+
+
+bool IS_ADC_RUNNING = false;
+bool tickTimer = false;
 
 /*****************************************************************************/
 
@@ -43,13 +56,19 @@ extern ADC_HandleTypeDef hadc1;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if(htim->Instance == TIM16) {
-			HAL_ADC_Start_IT(&hadc1);
+			adc_speed_queue_in.enqueue(1);
+			adc_threshhold_queue_in.enqueue(1);
+			tickTimer = true;
+
+
+
 		}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
 	HAL_ADC_Stop(&hadc1);
+	IS_ADC_RUNNING = FALSE;
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -58,14 +77,7 @@ void do_cpp_loop()
 	// INITIALIZE OBJECTS OF INTEREST
 	// Students - this is the "Dramatis Personae" section, before the loop
 
-	// THE SAMPLE CLOCK -- manages the input's sample rate
-	// Sample the quad-knob A & B pins every 4 ms.
-	// The tick_filter will be served an enqueued tick msg (every 1 ms)
-	// on q_ms, and the filter will forward only every fourth tick,
-	// and discard the rest. The tick that is forwarded will go to
-	// q_data_collect -- which will be served by the object (knob_FSM).
-	// INITIALIZATION - queues for in & out + down-sampling divisor.
-	Sample_clock tick_filter(&q_ms, &q_get_data_asap, 1);
+
 	// THE QUADRATURE-ENCODED KNOB - knob moving CW or CCW, or still.
 	// Needs to know the input pins.
 	// Needs an input queue to hold a sampling command, to be served ASAP.
@@ -107,14 +119,6 @@ void do_cpp_loop()
 	// logic signals, and a pointer to the queue for output.
 	//Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
 
-	// THE COUNTER -- each CW detent of the knob counts +1, each CCW, -1
-	// Needs a queue for input - if the queue is empty, then instead of AWAITing,
-	// this counter's number will remain unchanged.
-	// SYNCHRONOUS - does not need a queue out; uses a normal getter.
-	// INITIALIZE -- simple, start at zero! But look in a queue for INCREMENT
-	// and DECREMENT commands.
-	Single_digit_counter user_count(&q_user_command);
-
 	// THE DISPLAY -- seven segments.
 	// Normal synchronous function -- just tell it a number to show.
 	// INITIALIZE -- we must tell it which pins are wired to each
@@ -128,7 +132,18 @@ void do_cpp_loop()
 
 
 
+	Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOC, ADC_Speed_Knob_A_PIN, GPIOD, ADC_Speed_Knob_B_PIN);
+	Knob_FSM adc_threshhold_knob(&adc_threshhold_queue_out, &adc_threshhold_queue_in, GPIOD, Threshhold_Knob_A_PIN, GPIOA, Threshhold_Knob_B_PIN);
+
+
+	DoubleDigitCounter threshhold_counter(&adc_threshhold_queue_out);
+	DoubleDigitCounter speed_counter(&adc_speed_queue_out);
+
+	uint16_t adc_timer = 0;
+	uint16_t current_adc_speed = speed_counter.count();
+
 	init_mem_barrier();
+
 
 	while(1){
 
@@ -139,10 +154,20 @@ void do_cpp_loop()
 		//For Debugging purposes
 		if(!getRamHealth()) { while(1) {} }
 
-		// First, run the sample-clock task. It may have no work, but if
-		// the ISR ran very recently, then see if 4 ms have elapsed since the
-		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
-		tick_filter.update();
+		//Runs every milisecond
+		if(tickTimer) {
+			tickTimer = false;
+			adcTimer++;
+
+			if(adcTimer == current_adc_speed) {
+				current_adc_speed = speed_counter.count();
+				adcTimer = 0;
+				HAL_ADC_Start_IT(&hadc1);
+				IS_ADC_RUNNING = true;
+			}
+
+			adc_data.setTriggerLevel(threshhold_counter.count());
+		}
 
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
@@ -157,6 +182,13 @@ void do_cpp_loop()
 		// anything. It acts like a butler that waits in case you
 		// choose to issue any orders. If there is a CW or CCW
 		// command, then we increase or decrease the count.
+
+		adc_speed_knob.update();
+		adc_threshhold_knob.update();
+
+
+		threshhold_counter.update();
+		speed_counter.update();
 
 		/*
 		user_count.update();
