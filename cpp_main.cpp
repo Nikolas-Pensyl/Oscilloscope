@@ -7,11 +7,14 @@
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "DoubleDigitCounter.h"
-#include "Display.h"
+
 #include "Sean_queue.h"
 #include "Adc_to_Vert.h"
 #include "RamHealth.h"
 #include "Data_Store_Object.h"
+#include "Display.h"
+
+#define THRESHHOLD_MULTIPLIER 41
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -23,6 +26,8 @@ Sean_queue q_user_command;
 
 extern SPI_HandleTypeDef hspi1;
 
+Sean_queue buffer_finished;
+
 Sean_queue adc_raw_queue;
 Sean_queue pixel_vertical_queue;
 
@@ -32,10 +37,8 @@ Sean_queue adc_threshhold_queue_in;
 Sean_queue adc_speed_queue_out;
 Sean_queue adc_threshhold_queue_out;
 
-DataStoreObject adc_data;
+DataStoreObject adc_data(&buffer_finished);
 
-
-bool IS_ADC_RUNNING = false;
 bool tickTimer = false;
 
 /*****************************************************************************/
@@ -59,16 +62,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			adc_speed_queue_in.enqueue(1);
 			adc_threshhold_queue_in.enqueue(1);
 			tickTimer = true;
-
-
-
 		}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
 	HAL_ADC_Stop(&hadc1);
-	IS_ADC_RUNNING = FALSE;
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -120,14 +119,13 @@ void do_cpp_loop()
 	//Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
 
 
-	Display DOG;
-	DOG.init(hspi1);
-	DOG.clearScreen(hspi1);
-	DOG.drawDiag(hspi1);
+	Display DOG(&hspi1, &adc_data, &buffer_finished);
+	DOG.init();
+	DOG.clearScreen();
 
 
-	Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOC, ADC_Speed_Knob_A_PIN, GPIOD, ADC_Speed_Knob_B_PIN);
-	Knob_FSM adc_threshhold_knob(&adc_threshhold_queue_out, &adc_threshhold_queue_in, GPIOD, Threshhold_Knob_A_PIN, GPIOA, Threshhold_Knob_B_PIN);
+	Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
+	Knob_FSM adc_threshhold_knob(&adc_threshhold_queue_out, &adc_threshhold_queue_in, GPIOC, Threshhold_Knob_A_Pin, GPIOC, Threshhold_Knob_B_Pin);
 
 
 	DoubleDigitCounter threshhold_counter(&adc_threshhold_queue_out);
@@ -151,16 +149,15 @@ void do_cpp_loop()
 		//Runs every milisecond
 		if(tickTimer) {
 			tickTimer = false;
-			adcTimer++;
+			adc_timer++;
 
-			if(adcTimer == current_adc_speed) {
+			if(adc_timer == current_adc_speed) {
 				current_adc_speed = speed_counter.count();
-				adcTimer = 0;
+				adc_timer = 0;
 				HAL_ADC_Start_IT(&hadc1);
-				IS_ADC_RUNNING = true;
 			}
 
-			adc_data.setTriggerLevel(threshhold_counter.count());
+			adc_data.setTriggerLevel(threshhold_counter.count()*THRESHHOLD_MULTIPLIER);
 		}
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
@@ -183,6 +180,8 @@ void do_cpp_loop()
 		threshhold_counter.update();
 		speed_counter.update();
 
+
+		DOG.update();
 		/*
 		user_count.update();
 		if(q_ms.getUseCount()>0) {

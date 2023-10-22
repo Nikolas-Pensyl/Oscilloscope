@@ -28,11 +28,11 @@ class DataStoreObject {
 	    int16_t* readable_buffer;
 	    int16_t* writable_buffer;
 
-	    bool readable;
+	    Sean_queue *buffer_finished;
 
 
 	public:
-	    DataStoreObject();
+	    DataStoreObject(Sean_queue *buffer_finished);
 	    void updateDataStore(int16_t value);
 	    void setTriggerLevel(int16_t level);
 	    void bufferSwap();

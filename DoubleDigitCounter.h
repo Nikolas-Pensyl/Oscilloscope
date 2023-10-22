@@ -16,7 +16,6 @@ class DoubleDigitCounter {
 private:
 	Sean_queue *q_cmd;
 	uint8_t the_count;
-	bool modified;
 	static const int16_t MAX_SHOWN = 99;
 	static const int16_t MIN_SHOWN = 0;
 	static const int16_t ERROR_SHOW = 5;
@@ -29,7 +28,6 @@ public:
 	void update(void);
 	void debug_setter(int n);
 	uint8_t count(void) const;   // READ-ONLY getter declare const logic.
-	bool IsModified();
 };
 
 
