@@ -2,100 +2,99 @@
  * Display.cpp
  *
  *  Created on: Aug 18, 2023
- *      Author: docca
+ *      Author: Caden Daffron
  */
 
 #include "Display.h"
 
-// This default constructor shouldn't be used! Assigning source ptr = 0
-// (without memory protection) is very dangerous. The
-Display::Display() {
-	pins.port = GPIOB;
-	bitwise = 0;
-    source = new Single_digit_counter;  // EVIL D- so trap
-    assert(false);  // Set a breakpoint here to see if this is used.
-}
+#define DOG_MAX_PAGE 7
+#define DOG_MAX_COLUMN 131
 
-Display::~Display() {
-	// TODO Auto-generated destructor stub
-}
 
-Display::Display(const Display &other) {
-	this-> pins = other.pins;
-	this->bitwise = other.bitwise;
-	this->source = other.source;
-}
+void Display::init(SPI_HandleTypeDef hspi1) {
 
-Display::Display(const Single_digit_counter *source, const Display_config  *config){
-	// MEMORIZE WIRING
-	pins.port = config->port;
-	for (int i = 0; i < 7; i++){
-		pins.segment_mask[i] = config->segment_mask[i];
+	uint8_t initCommands[16] = {0xE2, 0x40, 0xA1, 0xC0, 0xA4, 0xA6, 0xA2, 0x2F, 0x27, 0x81, 0x10, 0xFA, 0x90, 0xAF, 0x40, 0xB0};
+
+	//Drive CD Pin Low to feed commands
+	HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
+
+	for(int i = 0; i < 16; i++) {
+		HAL_SPI_Transmit(&hspi1, (uint8_t*) &initCommands[i], 1, HAL_MAX_DELAY);
 	}
-	//  bit pattern: 7-segment as a byte = 0abcdefg
-	bitwise = 0x01;  // NULL is a dash.
 
-	// Data from counter:
-	this->source = source;
+	//Set CD Line high to indicate data
+	HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_SET);
 }
 
 
-void Display::seven_segmentize(uint8_t n){
-	//  bit pattern: 7-segment as a byte = 0abcdefg
-	switch (n){
-	case 0: bitwise = 0x7E; break; //_111 1110
-	case 1: bitwise = 0x30; break; //_011 0000
-	case 2: bitwise = 0x6D; break; //_110 1101
-	case 3: bitwise = 0x79; break; //_111 1001
-	case 4: bitwise = 0x33; break; //_011 0011
-	case 5: bitwise = 0x5B; break; //_101 1011
-	case 6: bitwise = 0x5F; break; //_101 1111
-	case 7: bitwise = 0x70; break; //_111 0000
-	case 8: bitwise = 0x7F; break;
-	case 9: bitwise = 0x73; break; //_111 0011
+void Display::clearScreen(SPI_HandleTypeDef hspi) {
+	uint8_t clear = 0x00;
+	uint8_t page_command = 0xB0;
+	uint8_t column_commands[2] = {0x00, 0x10};
+
+	// Iterate through all pages
+	for (int i = 0; i <= DOG_MAX_PAGE; i++)
+	{
+		// Set the CD line low, to signal incoming commands
+		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
+
+		// Advance the current page
+		HAL_SPI_Transmit(&hspi, (uint8_t*) &page_command, 1, HAL_MAX_DELAY);
+
+		// Reset to column 0 to begin writing data
+		HAL_SPI_Transmit(&hspi, (uint8_t*) &column_commands[0], 1, HAL_MAX_DELAY);
+		HAL_SPI_Transmit(&hspi, (uint8_t*) &column_commands[1], 1, HAL_MAX_DELAY);
+
+		// Set the CD line high, to signal incoming data
+		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_SET);
+
+		// Send clear bytes for each column until
+		for (int i = 30; i <= DOG_MAX_COLUMN; i++)
+		{
+			// Transmit an empty data byte to clear SRAM
+			HAL_SPI_Transmit(&hspi, (uint8_t*) &clear, 1, HAL_MAX_DELAY);
+		}
+
+		page_command++;
 	}
 }
 
-void Display::init(){
-	//Set Scroll line to 0 :: 0100_0000
-
-	//Set SEG direction to reverse :: 1010_0001
-
-	//Set COM direction to normal :: 1100_0000
-
-	//Set all pixels to ON :: 1010_0010
-
-	//Set inverse display to OFF :: 1010_0110
-
-	//Set LCD Bias Ratio to 1/9 :: 1010_0010
-
-	//Set Power Settings to all ON :: 0010_1111
-
-	//Set VLCD Resistor Ratio(For contrast) :: 0010_0111
-
-	//Set Electronic Volume(Two-part command, for contrast) :: 1000_0001, 0001_0000
-
-	//Set Temperature Compensation(Two-part command) :: 1111_1010, 1001_0000
-
-	//Set Display Enable to ON :: 1010_1111
-
-}
 
 void Display::update(){
-	// Get a small integer from the source
-	uint8_t n = source->count();
-	// Encode it into a seven-segment pattern, packed bitwise into a byte
-	seven_segmentize(n);
 
-	// Examine each bit of the bitwise encoding
-	// Assert the seven-segment display to match
-	for (int n = 0; n < 7; n++){
-		uint8_t mask = 1 << (6-n);
-		if (mask & bitwise){
-			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_SET);
-		}
-		else {
-			HAL_GPIO_WritePin(pins.port, pins.segment_mask[n], GPIO_PIN_RESET);
-		}
+}
+
+// Draw a diagonal line from one corner of the screen to the other
+void Display::drawDiag(SPI_HandleTypeDef hspi) {
+	uint8_t page;
+	uint8_t height, heightShift;
+	uint8_t page_command = 0xB0;
+	uint8_t column_commands[2] = {0x00, 0x10};
+
+	// Set the CD line low, to signal incoming commands
+	HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
+
+	// Reset to column 0 to begin writing data
+	HAL_SPI_Transmit(&hspi, (uint8_t*) &column_commands[0], 1, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi, (uint8_t*) &column_commands[1], 1, HAL_MAX_DELAY);
+
+	for (int i = 0; i < 64; i++)
+	{
+		page = i / 8;
+		heightShift = i % 8;
+		height = 1<<heightShift;
+		page_command = 0xB0 | page;
+
+		// Go to relevant page
+		HAL_SPI_Transmit(&hspi, (uint8_t*) &page_command, 1, HAL_MAX_DELAY);
+
+		// Set the CD line high, to signal incoming data
+		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_SET);
+
+		HAL_SPI_Transmit(&hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
+		if (i % 2 == 0)
+			 HAL_SPI_Transmit(&hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
+
+		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
 	}
 }

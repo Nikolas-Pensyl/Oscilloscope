@@ -19,8 +19,12 @@
 Sean_queue q_ms;
 Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
+
+extern SPI_HandleTypeDef hspi1;
+
 Sean_queue adc_raw_queue;
 Sean_queue pixel_vertical_queue;
+
 /*****************************************************************************/
 
 /* USER CODE BEGIN 0 */
@@ -62,7 +66,6 @@ void do_cpp_loop()
 	// q_data_collect -- which will be served by the object (knob_FSM).
 	// INITIALIZATION - queues for in & out + down-sampling divisor.
 	Sample_clock tick_filter(&q_ms, &q_get_data_asap, 1);
-
 	// THE QUADRATURE-ENCODED KNOB - knob moving CW or CCW, or still.
 	// Needs to know the input pins.
 	// Needs an input queue to hold a sampling command, to be served ASAP.
@@ -117,6 +120,13 @@ void do_cpp_loop()
 	// INITIALIZE -- we must tell it which pins are wired to each
 	// segment of the 7-seg display, but then we'll assume those wires
 	// stay in place. SegmentA <-> First const; SegmentB <-> second const; etc.
+	Display DOG;
+	DOG.init(hspi1);
+
+	DOG.clearScreen(hspi1);
+	DOG.drawDiag(hspi1);
+
+
 
 	init_mem_barrier();
 
@@ -133,6 +143,7 @@ void do_cpp_loop()
 		// the ISR ran very recently, then see if 4 ms have elapsed since the
 		// last SAMPLE command. If so, issue a new SAMPLE command (i.e. TICK)
 		tick_filter.update();
+
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
 		// Often calling this accomplishes nothing, but at the chosen
