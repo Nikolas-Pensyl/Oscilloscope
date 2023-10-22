@@ -26,31 +26,40 @@
     	switch(store_state){
 
     	case CHECK_1:
-    		if(value < trigger_level){
-    			writable_buffer[index] = value;
+    		if(value <= trigger_level){
+    			writable_buffer[0] = value;
     			store_state = CHECK_2;
-    			index = 1;
     		}
     		break;
     	case CHECK_2:
-    		if(value < trigger_level){
-    			writable_buffer[index] = value;
+    		if(value <= trigger_level){
+    			writable_buffer[1] = value;
     			store_state = CHECK_3;
-    			index = 2;
+    		}
+    		else{
+    			store_state = CHECK_1;
     		}
     		break;
     	case CHECK_3:
-    		if(value > trigger_level){
-    			writable_buffer[index] = value;
+    		if(value >= trigger_level){
+    			writable_buffer[2] = value;
     			store_state = CHECK_3;
-    			index = 3;
     		}
+    		else{
+    			writable_buffer[0] = writable_buffer[1];
+    		    writable_buffer[1] = value;
+    		}
+
     		break;
     	case CHECK_4:
-    	    if(value > trigger_level){
-    	    	writable_buffer[index] = value;
+    	    if(value >= trigger_level){
+    	    	writable_buffer[3] = value;
     	    	store_state = RECORDING;
     	    	index = 4;
+    	    }
+    	    else{
+    	    	writable_buffer[0]=value;
+    	    	store_state = CHECK_2;
     	    }
     	    break;
     	case RECORDING:
