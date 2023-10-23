@@ -9,12 +9,12 @@
 #define SRC_DISPLAY_H_
 
 #include "main.h"
-#include "Data_Store_Object.h"
 #include "Sean_queue.h"
+#include "Data_Store_Object.h"
 #include <assert.h>
 
-
 class Display {
+
 private:
 	SPI_HandleTypeDef *hspi;
 	DataStoreObject *vert_data;

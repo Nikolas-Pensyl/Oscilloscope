@@ -20,10 +20,6 @@
 //////////////////////////////////////////////////////////
 
 /*** Declare a queue, globally since it is IPC ...                                                      ***/
-Sean_queue q_ms;
-Sean_queue q_get_data_asap;
-Sean_queue q_user_command;
-
 extern SPI_HandleTypeDef hspi1;
 
 Sean_queue buffer_finished;
@@ -36,8 +32,6 @@ Sean_queue adc_threshhold_queue_in;
 
 Sean_queue adc_speed_queue_out;
 Sean_queue adc_threshhold_queue_out;
-
-DataStoreObject adc_data(&buffer_finished);
 
 bool tickTimer = false;
 
@@ -118,6 +112,8 @@ void do_cpp_loop()
 	// logic signals, and a pointer to the queue for output.
 	//Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
 
+
+	DataStoreObject adc_data(&buffer_finished);
 
 	Display DOG(&hspi1, &adc_data, &buffer_finished);
 	DOG.init();
