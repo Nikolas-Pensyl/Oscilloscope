@@ -36,8 +36,7 @@ Sean_queue adc_threshhold_queue_out;
 
 
 Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
-
-bool tickTimer = false;
+DoubleDigitCounter speed_counter(&adc_speed_queue_out);
 
 /*****************************************************************************/
 
@@ -60,9 +59,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			adc_speed_queue_in.enqueue(1);
 			adc_threshhold_queue_in.enqueue(1);
 		}
-		else if(htim->Instace == TIM17) {
-			HAL_TIM_STOP_IT(&htim17);
-			HAL_TIM_SET_AUTORELOAD(adc_speed_knob.count()); //Count 0-99 so timer period is 1-100 us
+		else if(htim->Instance == TIM17) {
+			HAL_TIM_Base_Stop(&htim17);
+			__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*500); //Count 0-99 so timer period is 1-100 us
+			HAL_TIM_Base_Start_IT(&htim17);
 			HAL_ADC_Start_IT(&hadc1);
 		}
 }
@@ -123,8 +123,6 @@ void do_cpp_loop()
 	DataStoreObject adc_data(&buffer_finished);
 
 
-	DataStoreObject adc_data(&buffer_finished);
-
 	Display DOG(&hspi1, &adc_data, &buffer_finished);
 	DOG.init();
 	DOG.clearScreen();
@@ -135,15 +133,13 @@ void do_cpp_loop()
 
 
 	DoubleDigitCounter threshhold_counter(&adc_threshhold_queue_out);
-	DoubleDigitCounter speed_counter(&adc_speed_queue_out);
 
-	uint16_t adc_timer = 0;
-	uint16_t current_adc_speed = speed_counter.count();
+
 	int16_t adc_data_int;
 
 	__HAL_RCC_ADC_CLK_ENABLE();
 	HAL_TIM_Base_Start_IT(&htim16);
-	HAL_TIM_SET_AUTORELOAD(adc_speed_knob.count()+1); //Count 0-99 so timer period is 1-100 us
+	__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*500); //Count 0-99 so timer period is 1-100 us
 	HAL_TIM_Base_Start_IT(&htim17);
 
 	init_mem_barrier();
@@ -158,19 +154,7 @@ void do_cpp_loop()
 		//For Debugging purposes
 		if(!getRamHealth()) { while(1) {} }
 
-		//Runs every milisecond
-		if(tickTimer) {
-			tickTimer = false;
-			adc_timer++;
-
-			if(adc_timer == current_adc_speed) {
-				current_adc_speed = speed_counter.count();
-				adc_timer = 0;
-				HAL_ADC_Start_IT(&hadc1);
-			}
-
-			adc_data.setTriggerLevel(threshhold_counter.count()*THRESHHOLD_MULTIPLIER);
-		}
+		adc_data.setTriggerLevel(threshhold_counter.count()*THRESHHOLD_MULTIPLIER);
 
 		// Second - run the input driver. This awaits the sample-clock TICK.
 		// Often calling this accomplishes nothing, but at the chosen

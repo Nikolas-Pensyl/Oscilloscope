@@ -14,7 +14,7 @@
 
 
 DoubleDigitCounter::DoubleDigitCounter() {
-	this->the_count = 1;
+	this->the_count = 0;
 	this->q_cmd = 0;  // THIS IS NOT OK ...
 }
 
@@ -29,7 +29,7 @@ DoubleDigitCounter::DoubleDigitCounter(const DoubleDigitCounter &other) {
 
 
 DoubleDigitCounter::DoubleDigitCounter(Sean_queue *q_cmd){
-	this->the_count = 1;
+	this->the_count = 0;
 	this->q_cmd = q_cmd;
 }
 
