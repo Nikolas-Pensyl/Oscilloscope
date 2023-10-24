@@ -19,10 +19,6 @@
 //////////////////////////////////////////////////////////
 
 /*** Declare a queue, globally since it is IPC ...                                                      ***/
-Sean_queue q_ms;
-Sean_queue q_get_data_asap;
-Sean_queue q_user_command;
-
 extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim16;
 extern TIM_HandleTypeDef htim17;
@@ -37,6 +33,7 @@ Sean_queue adc_threshhold_queue_in;
 
 Sean_queue adc_speed_queue_out;
 Sean_queue adc_threshhold_queue_out;
+
 
 Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
 
@@ -125,6 +122,8 @@ void do_cpp_loop()
 
 	DataStoreObject adc_data(&buffer_finished);
 
+
+	DataStoreObject adc_data(&buffer_finished);
 
 	Display DOG(&hspi1, &adc_data, &buffer_finished);
 	DOG.init();

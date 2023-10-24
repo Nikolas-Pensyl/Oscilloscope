@@ -10,8 +10,7 @@
 
 #include "main.h"
 #include "KnobFSM.h"
-#include "Sample_clock.h"
-#include "Singledigitcounter.h"
+
 #include "Sean_queue.h"
 #include "Adc_to_Vert.h"
 
