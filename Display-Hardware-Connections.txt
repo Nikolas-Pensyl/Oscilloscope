@@ -15,7 +15,7 @@ Wiring:
 	PA1 to 25 (clk)
 	PA4 to 28 (Chip Select)
 	PA5 to 26 (CD)
-	PA12 to MOSI
+	PA12 to 24 (MOSI)
 			
 		
 Things to check:

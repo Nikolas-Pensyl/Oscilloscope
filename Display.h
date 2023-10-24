@@ -1,12 +1,12 @@
 /*
  * Display.h
  *
- *  Created on: Aug 18, 2023
- *      Author: Caden Daffron
+ *  Created on: Oct 22, 2023
+ *      Author: cjdaf
  */
 
-#ifndef SRC_DISPLAY_H_
-#define SRC_DISPLAY_H_
+#ifndef OSCILLOSCOPE_DISPLAY_H_
+#define OSCILLOSCOPE_DISPLAY_H_
 
 #include "main.h"
 #include "Data_Store_Object.h"
@@ -27,4 +27,4 @@ public:
 	void drawDiag();
 };
 
-#endif /* SRC_DISPLAY_H_ */
+#endif /* OSCILLOSCOPE_DISPLAY_H_ */

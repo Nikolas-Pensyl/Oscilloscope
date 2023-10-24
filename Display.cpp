@@ -78,6 +78,7 @@ void Display::update()
 	uint8_t height, heightShift;
 	uint8_t page_command = 0xB0;
 	uint8_t column_commands[2] = {0x00, 0x10};
+	uint8_t column2 = 16;
 	int16_t* buffer = vert_data->getReadBuffer();
 
 	// Set the CD line low, to signal incoming commands
@@ -85,11 +86,14 @@ void Display::update()
 
 	clearScreen();
 
+	HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
+
 	// Reset to column 0 to begin writing data
 	HAL_SPI_Transmit(hspi, (uint8_t*) &column_commands[0], 1, HAL_MAX_DELAY);
-	HAL_SPI_Transmit(hspi, (uint8_t*) &column_commands[1], 1, HAL_MAX_DELAY);
+	//HAL_SPI_Transmit(hspi, (uint8_t*) &column_commands[1], 1, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(hspi, (uint8_t*) &column2, 1, HAL_MAX_DELAY);
 
-	for (int i = 99; i >= 0; i--)
+	for (int i = 0; i < 100; i++)
 	{
 		page = buffer[i] / 8;
 		heightShift = buffer[i] % 8;
@@ -103,8 +107,6 @@ void Display::update()
 		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_SET);
 
 		HAL_SPI_Transmit(hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
-		if (i % 2 == 0)
-			 HAL_SPI_Transmit(hspi, (uint8_t*) &height, 1, HAL_MAX_DELAY);
 
 		HAL_GPIO_WritePin(GPIOA, DOG_CD_Pin, GPIO_PIN_RESET);
 	}
@@ -114,6 +116,10 @@ void Display::update()
 
 // Draw a diagonal line from one corner of the screen to the other
 void Display::drawDiag() {
+	int16_t data;
+		if (!buffer_finished->dequeue(&data))
+			return;
+
 	uint8_t page;
 	uint8_t height, heightShift;
 	uint8_t page_command = 0xB0;

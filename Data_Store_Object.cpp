@@ -23,6 +23,7 @@
 
     void DataStoreObject::updateDataStore(int16_t value){
     	static int16_t index = 0;
+    	int16_t test = value;
     	switch(store_state){
     	//raw_To_Vert(int16_t raw, int16_t* pixel)
     	case CHECK_1:
@@ -43,7 +44,7 @@
     	case CHECK_3:
     		if(value >= trigger_level){
     			raw_To_Vert(value, &writable_buffer[2]);
-    			store_state = CHECK_3;
+    			store_state = CHECK_4;
     		}
     		else{
     			writable_buffer[0] = writable_buffer[1];

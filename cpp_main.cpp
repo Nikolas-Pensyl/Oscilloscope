@@ -7,7 +7,6 @@
 #include "KnobFSM.h"
 #include "Sample_clock.h"
 #include "DoubleDigitCounter.h"
-
 #include "Sean_queue.h"
 #include "Adc_to_Vert.h"
 #include "RamHealth.h"
@@ -25,6 +24,8 @@ Sean_queue q_get_data_asap;
 Sean_queue q_user_command;
 
 extern SPI_HandleTypeDef hspi1;
+extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim17;
 
 Sean_queue buffer_finished;
 
@@ -37,7 +38,7 @@ Sean_queue adc_threshhold_queue_in;
 Sean_queue adc_speed_queue_out;
 Sean_queue adc_threshhold_queue_out;
 
-DataStoreObject adc_data(&buffer_finished);
+Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
 
 bool tickTimer = false;
 
@@ -61,7 +62,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if(htim->Instance == TIM16) {
 			adc_speed_queue_in.enqueue(1);
 			adc_threshhold_queue_in.enqueue(1);
-			tickTimer = true;
+		}
+		else if(htim->Instace == TIM17) {
+			HAL_TIM_STOP_IT(&htim17);
+			HAL_TIM_SET_AUTORELOAD(adc_speed_knob.count()); //Count 0-99 so timer period is 1-100 us
+			HAL_ADC_Start_IT(&hadc1);
 		}
 }
 
@@ -118,13 +123,15 @@ void do_cpp_loop()
 	// logic signals, and a pointer to the queue for output.
 	//Knob_FSM knob1(&q_user_command, &q_get_data_asap, GPIOB, Quad_A_PB7_Pin, GPIOB, Quad_B_PB9_Pin);
 
+	DataStoreObject adc_data(&buffer_finished);
+
 
 	Display DOG(&hspi1, &adc_data, &buffer_finished);
 	DOG.init();
 	DOG.clearScreen();
 
 
-	Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
+
 	Knob_FSM adc_threshhold_knob(&adc_threshhold_queue_out, &adc_threshhold_queue_in, GPIOC, Threshhold_Knob_A_Pin, GPIOC, Threshhold_Knob_B_Pin);
 
 
@@ -133,6 +140,12 @@ void do_cpp_loop()
 
 	uint16_t adc_timer = 0;
 	uint16_t current_adc_speed = speed_counter.count();
+	int16_t adc_data_int;
+
+	__HAL_RCC_ADC_CLK_ENABLE();
+	HAL_TIM_Base_Start_IT(&htim16);
+	HAL_TIM_SET_AUTORELOAD(adc_speed_knob.count()+1); //Count 0-99 so timer period is 1-100 us
+	HAL_TIM_Base_Start_IT(&htim17);
 
 	init_mem_barrier();
 
@@ -165,7 +178,9 @@ void do_cpp_loop()
 		// times, it cause a debouncer to read the knob pins and decide
 		// if there is a twist in progress.
 		//knob1.update();
-		raw_To_Vert_Queue(&adc_raw_queue, &pixel_vertical_queue);
+		if(adc_raw_queue.dequeue(&adc_data_int)) {
+			adc_data.updateDataStore(adc_data_int);
+		}
 		// Third - run the counter. This awaits the knob's sampled
 		// and decoded input. This call often does nothing - since
 		// the user rarely turns the knob, it REALLY rarely does
@@ -182,6 +197,7 @@ void do_cpp_loop()
 
 
 		DOG.update();
+		//DOG.drawDiag();
 		/*
 		user_count.update();
 		if(q_ms.getUseCount()>0) {
