@@ -10,11 +10,10 @@
 #define DOG_MAX_PAGE 7
 #define DOG_MAX_COLUMN 131
 
-Display::Display(SPI_HandleTypeDef *hspi, DataStoreObject *vert_data, Sean_queue *buffer_finished)
+Display::Display(SPI_HandleTypeDef *hspi, DataStoreObject *vert_data)
 {
 	this->hspi = hspi;
 	this->vert_data = vert_data;
-	this->buffer_finished = buffer_finished;
 	init();
 }
 
@@ -70,9 +69,6 @@ void Display::clearScreen() {
 
 void Display::update()
 {
-	int16_t data;
-	if (!buffer_finished->dequeue(&data))
-		return;
 
 	uint8_t page;
 	uint8_t height, heightShift;
@@ -116,10 +112,6 @@ void Display::update()
 
 // Draw a diagonal line from one corner of the screen to the other
 void Display::drawDiag() {
-	int16_t data;
-		if (!buffer_finished->dequeue(&data))
-			return;
-
 	uint8_t page;
 	uint8_t height, heightShift;
 	uint8_t page_command = 0xB0;

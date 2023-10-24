@@ -14,6 +14,7 @@
 #include "Display.h"
 
 #define THRESHHOLD_MULTIPLIER 41
+#define SPEED_MULTIPLIER 100
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -61,7 +62,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		}
 		else if(htim->Instance == TIM17) {
 			HAL_TIM_Base_Stop(&htim17);
-			__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*500); //Count 0-99 so timer period is 1-100 us
+			__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*SPEED_MULTIPLIER); //Count 0-99 so timer period is 1-100 us
 			HAL_TIM_Base_Start_IT(&htim17);
 			HAL_ADC_Start_IT(&hadc1);
 		}
@@ -123,7 +124,7 @@ void do_cpp_loop()
 	DataStoreObject adc_data(&buffer_finished);
 
 
-	Display DOG(&hspi1, &adc_data, &buffer_finished);
+	Display DOG(&hspi1, &adc_data);
 	DOG.init();
 	DOG.clearScreen();
 
@@ -136,10 +137,11 @@ void do_cpp_loop()
 
 
 	int16_t adc_data_int;
+	int16_t buffer_finished_data;
 
 	__HAL_RCC_ADC_CLK_ENABLE();
 	HAL_TIM_Base_Start_IT(&htim16);
-	__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*500); //Count 0-99 so timer period is 1-100 us
+	__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*SPEED_MULTIPLIER); //Count 0-99 so timer period is 1-100 us
 	HAL_TIM_Base_Start_IT(&htim17);
 
 	init_mem_barrier();
@@ -178,8 +180,11 @@ void do_cpp_loop()
 		threshhold_counter.update();
 		speed_counter.update();
 
-
-		DOG.update();
+		if(buffer_finished.dequeue(&buffer_finished_data))  {
+			HAL_TIM_Base_Stop(&htim17);
+			DOG.update();
+			HAL_TIM_Base_Start_IT(&htim17);
+		}
 		//DOG.drawDiag();
 		/*
 		user_count.update();

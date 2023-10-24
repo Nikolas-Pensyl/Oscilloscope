@@ -20,7 +20,7 @@ private:
 	DataStoreObject *vert_data;
 	Sean_queue *buffer_finished;
 public:
-	Display(SPI_HandleTypeDef *hspi, DataStoreObject *vert_data, Sean_queue *buffer_finished);
+	Display(SPI_HandleTypeDef *hspi, DataStoreObject *vert_data);
 	void init();
 	void clearScreen();
 	void update(void);
