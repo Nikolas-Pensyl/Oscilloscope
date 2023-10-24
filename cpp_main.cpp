@@ -14,7 +14,7 @@
 #include "Display.h"
 
 #define THRESHHOLD_MULTIPLIER 41
-#define SPEED_MULTIPLIER 100
+#define SPEED_MULTIPLIER 5
 ///////////////// Debugging code depository //////////////
 // int16_t debug_mailbox = -1;
 //////////////////////////////////////////////////////////
@@ -35,9 +35,10 @@ Sean_queue adc_threshhold_queue_in;
 Sean_queue adc_speed_queue_out;
 Sean_queue adc_threshhold_queue_out;
 
+bool start_adc = false;
 
-Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
-DoubleDigitCounter speed_counter(&adc_speed_queue_out);
+
+
 
 /*****************************************************************************/
 
@@ -61,16 +62,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			adc_threshhold_queue_in.enqueue(1);
 		}
 		else if(htim->Instance == TIM17) {
-			HAL_TIM_Base_Stop(&htim17);
-			__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*SPEED_MULTIPLIER); //Count 0-99 so timer period is 1-100 us
-			HAL_TIM_Base_Start_IT(&htim17);
-			HAL_ADC_Start_IT(&hadc1);
+			start_adc = true;
 		}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	adc_raw_queue.enqueue(HAL_ADC_GetValue(hadc));
-	HAL_ADC_Stop(&hadc1);
 }
 
 /********************* Keep everything in C++-language from this pt. ***/
@@ -131,18 +128,21 @@ void do_cpp_loop()
 
 
 	Knob_FSM adc_threshhold_knob(&adc_threshhold_queue_out, &adc_threshhold_queue_in, GPIOC, Threshhold_Knob_A_Pin, GPIOC, Threshhold_Knob_B_Pin);
+	Knob_FSM adc_speed_knob(&adc_speed_queue_out, &adc_speed_queue_in, GPIOB, ADC_Speed_Knob_A_Pin, GPIOB, ADC_Speed_Knob_B_Pin);
 
 
 	DoubleDigitCounter threshhold_counter(&adc_threshhold_queue_out);
-
+	DoubleDigitCounter speed_counter(&adc_speed_queue_out);
 
 	int16_t adc_data_int;
+	int16_t adc_period = speed_counter.count();
 	int16_t buffer_finished_data;
 
 	__HAL_RCC_ADC_CLK_ENABLE();
 	HAL_TIM_Base_Start_IT(&htim16);
 	__HAL_TIM_SET_AUTORELOAD(&htim17, (speed_counter.count()+1)*SPEED_MULTIPLIER); //Count 0-99 so timer period is 1-100 us
 	HAL_TIM_Base_Start_IT(&htim17);
+
 
 	init_mem_barrier();
 
@@ -155,6 +155,11 @@ void do_cpp_loop()
 
 		//For Debugging purposes
 		if(!getRamHealth()) { while(1) {} }
+
+		if(start_adc) {
+			start_adc=false;
+			HAL_ADC_Start_IT(&hadc1);
+		}
 
 		adc_data.setTriggerLevel(threshhold_counter.count()*THRESHHOLD_MULTIPLIER);
 
@@ -183,6 +188,13 @@ void do_cpp_loop()
 		if(buffer_finished.dequeue(&buffer_finished_data))  {
 			HAL_TIM_Base_Stop(&htim17);
 			DOG.update();
+			HAL_TIM_Base_Start_IT(&htim17);
+		}
+
+		if(adc_period!=speed_counter.count()) {
+			HAL_TIM_Base_Stop(&htim17);
+			adc_period = speed_counter.count();
+			__HAL_TIM_SET_AUTORELOAD(&htim17, (adc_period+1)*SPEED_MULTIPLIER); //Count 0-99 so timer period is 1-100 us
 			HAL_TIM_Base_Start_IT(&htim17);
 		}
 		//DOG.drawDiag();
