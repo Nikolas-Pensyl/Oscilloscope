@@ -23,7 +23,7 @@
 
     void DataStoreObject::updateDataStore(int16_t value){
     	static int16_t index = 0;
-    	int16_t test = value;
+
     	switch(store_state){
     	//raw_To_Vert(int16_t raw, int16_t* pixel)
     	case CHECK_1:
@@ -79,6 +79,10 @@
     }
 
     void DataStoreObject::bufferSwap(){
+    	if (display_is_reading){
+    		return;
+    	}
+
     	if(writable_buffer == buffer1){
     		writable_buffer = buffer2;
     		readable_buffer = buffer1;

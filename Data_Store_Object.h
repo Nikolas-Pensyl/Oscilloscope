@@ -26,6 +26,9 @@ class DataStoreObject {
 	    int16_t* readable_buffer;
 	    int16_t* writable_buffer;
 
+	    enum storeState{CHECK_1,CHECK_2,CHECK_3,CHECK_4,RECORDING};
+	    enum storeState store_state;
+
 	    Sean_queue *buffer_finished;
 
 
@@ -35,8 +38,8 @@ class DataStoreObject {
 	    void setTriggerLevel(int16_t level);
 	    void bufferSwap();
 	    int16_t* getReadBuffer();
-	    enum storeState{CHECK_1,CHECK_2,CHECK_3,CHECK_4,RECORDING};
-	    enum storeState store_state;
+
+	    bool display_is_reading = false;
 
 };
 

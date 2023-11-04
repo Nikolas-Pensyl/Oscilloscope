@@ -23,6 +23,7 @@ public:
 	Display(SPI_HandleTypeDef *hspi, DataStoreObject *vert_data);
 	void init();
 	void clearScreen();
+	void clearColumn(uint8_t column);
 	void update(void);
 	void drawDiag();
 };

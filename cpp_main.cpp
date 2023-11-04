@@ -136,7 +136,7 @@ void do_cpp_loop()
 
 	int16_t adc_data_int;
 	int16_t adc_period = speed_counter.count();
-	int16_t buffer_finished_data;
+
 
 	__HAL_RCC_ADC_CLK_ENABLE();
 	HAL_TIM_Base_Start_IT(&htim16);
@@ -185,11 +185,7 @@ void do_cpp_loop()
 		threshhold_counter.update();
 		speed_counter.update();
 
-		if(buffer_finished.dequeue(&buffer_finished_data))  {
-			HAL_TIM_Base_Stop(&htim17);
-			DOG.update();
-			HAL_TIM_Base_Start_IT(&htim17);
-		}
+		DOG.update();
 
 		if(adc_period!=speed_counter.count()) {
 			HAL_TIM_Base_Stop(&htim17);
