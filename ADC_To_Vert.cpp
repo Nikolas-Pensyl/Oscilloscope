@@ -6,8 +6,15 @@
  */
 
 #include "ADC_To_Vert.h"
+#define MAX_ADC_RAW 4096
 
 bool raw_To_Vert(int16_t raw, int16_t* pixel) {
+	if(raw<0) {
+		raw = 0;
+	} else if(raw>4096) {
+		raw = 4096;
+	}
+
 	int32_t temp_pixel = (int32_t)raw;
 
 	//64 Vertical lines on Display

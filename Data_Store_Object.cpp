@@ -5,6 +5,7 @@
  *      Author: simon
  */
 #include "Data_Store_Object.h"
+#define MAX_ADC_RAW 4096
 
 
 
@@ -18,13 +19,28 @@
 	}
 
     void DataStoreObject::setTriggerLevel(int16_t level) {
+    	if(level<0) {
+    		level = 0;
+    	} else if(level >MAX_ADC_RAW) {
+    		level = MAX_ADC_RAW;
+    	}
+
         trigger_level = level;
     }
 
     void DataStoreObject::updateDataStore(int16_t value){
     	static int16_t index = 0;
+
+    	if(value<0) {
+    		value = 0;
+    	} else if(value >MAX_ADC_RAW) {
+    	    value = MAX_ADC_RAW;
+    	}
+
+    	//Check which value we are checking for
+    	//Then we convert the value, update the writable_buffer accordingly, then update the store_state accordingly
     	switch(store_state){
-    	//raw_To_Vert(int16_t raw, int16_t* pixel)
+
     	case CHECK_1:
     		if(value <= trigger_level){
     			raw_To_Vert(value, &writable_buffer[0]);
@@ -78,6 +94,7 @@
     }
 
     void DataStoreObject::bufferSwap(){
+    	//Swap buffers
     	if(writable_buffer == buffer1){
     		writable_buffer = buffer2;
     		readable_buffer = buffer1;
@@ -86,6 +103,8 @@
     		writable_buffer = buffer1;
     		readable_buffer = buffer2;
     	}
+
+    	//IPC for display to know we are done converting
     	buffer_finished->enqueue(1);
     }
 
