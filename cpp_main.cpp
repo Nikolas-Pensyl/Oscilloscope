@@ -110,6 +110,7 @@ void do_cpp_loop()
 		if(!getRamHealth()) { while(1) {} }
 
 		//If start_ADC flag start the adc conversion then the adc_callback will run once complete
+		//Not going to be exact timing for convsersion because we have to wait for main to get back here before starting the adc
 		if(start_adc) {
 			start_adc=false;
 			HAL_ADC_Start_IT(&hadc1);
@@ -135,6 +136,8 @@ void do_cpp_loop()
 		speed_counter.update();
 
 		//If message from buffer saying data read complete update display
+		//We are not in compliance here with main shall do no task work
+		//We can fix this by putting this in a separate function and then dequeue in DOG.update();
 		if(buffer_finished.dequeue(&buffer_finished_data))  {
 			//Display function is too slow on its own so stop reading from adc while displaying
 			HAL_TIM_Base_Stop(&htim17);
@@ -148,6 +151,7 @@ void do_cpp_loop()
 
 
 		//If speed_counter is not up to date
+		//We can fix this by putting this in a separate function
 		if(adc_period!=speed_counter.count()) {
 			//Stop the timer so we can update the value of top
 			HAL_TIM_Base_Stop(&htim17);
